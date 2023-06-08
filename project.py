@@ -30,7 +30,7 @@ def main():
         elif(command=="/download"):
             download_file(file_collection)
         else: 
-            print("Command not found admin!")
+            print("Command not found for admin!")
     else:
         if(command =="/publish"):
             print("Permission denied")
@@ -39,7 +39,8 @@ def main():
         elif(command=="/download"):
             download_file(file_collection)
         else: 
-            print("Command not found client!") 
+            print("Command not found for client!") 
+    print("---------------------------")
     return main()
     # Generate keys
 def PublisherPermission(collection):
@@ -61,9 +62,10 @@ def PublisherPermission(collection):
         "signature": sig_hex,
         "public_key": binascii.hexlify(pk).decode('utf-8')
     })
-        print("Pulished!")
+        print("Published!")
     except:
         print("Duong dan khong hop le")
+        PublisherPermission(collection)
 
     #     # Upload signature to MongoDB
 
@@ -90,6 +92,7 @@ def RecepientPermission(collection):
              
     except:
         print("File khong hop le")
+        RecepientPermission(collection)
 
 def download_file(collection):
     list_files(collection)
@@ -104,6 +107,7 @@ def download_file(collection):
         print("Downloaded successfully!")
     else:
         print("File not found!")
+        download_file(collection)
 
 def list_files(collection):
     print("Available files:")
