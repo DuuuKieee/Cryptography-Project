@@ -16,7 +16,7 @@ def profile_dilithium(Dilithium):
     cProfile.runctx("Dilithium.sign(sk, m)", globals=gvars, locals=lvars, sort=1)
     # cProfile.runctx("Dilithium.verify(pk, m, sig)", globals=gvars, locals=lvars, sort=1)
     
-def benchmark_dilithium(Dilithium, name, count):
+def benchmark_dilithium(Dilithium, name, count, message):
     # Banner
     print(f"-"*27)
     print(f"  {name} | ({count} calls)")
@@ -27,7 +27,7 @@ def benchmark_dilithium(Dilithium, name, count):
     sign_times = []
     verify_times = []
     # 32 byte message
-    m = b"Your message signed by Dilithium"
+    m = message
     
     for _ in range(count):
         t0 = time()

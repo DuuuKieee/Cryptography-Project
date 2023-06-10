@@ -2,7 +2,7 @@ import binascii
 import gridfs
 from dilithium import Dilithium3
 from pymongo import MongoClient
-
+from benchmark_dilithium import benchmark_dilithium
 def main():
     # Connect to MongoDB
     print("Account:")
@@ -29,6 +29,12 @@ def main():
             RecepientPermission(signature_collection)
         elif(command=="/download"):
             download_file(file_collection)
+        elif(command=="/benchmark"):
+            print("Số lần gọi thuật toán để đo hiệu suất:")
+            count = input()
+            print("File path:")
+            path = input()
+            bench_mark(path,count)
         else: 
             print("Command not found for admin!")
     else:
@@ -115,5 +121,10 @@ def list_files(collection):
         file_name = document["filename"]
         file_date = document["uploadDate"]
         print(f"{i}: {file_name} (Uploaded on: {file_date})")
+
+def bench_mark(path, count):
+    with open(path, "rb") as file:
+            pdf_file = file.read()
+    benchmark_dilithium(Dilithium,Dilithium3,count,pdf_file)
 if __name__ == "__main__":
     main()
