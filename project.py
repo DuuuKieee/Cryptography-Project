@@ -30,11 +30,11 @@ def main():
         elif(command=="/download"):
             download_file(file_collection)
         elif(command=="/benchmark"):
-            print("Số lần gọi thuật toán để đo hiệu suất:")
-            count = input()
+            # print("Số lần gọi thuật toán để đo hiệu suất:")
+            # count = input()
             print("File path:")
             path = input()
-            bench_mark(path,count)
+            bench_mark(path)
         else: 
             print("Command not found for admin!")
     else:
@@ -122,9 +122,10 @@ def list_files(collection):
         file_date = document["uploadDate"]
         print(f"{i}: {file_name} (Uploaded on: {file_date})")
 
-def bench_mark(path, count):
+def bench_mark(path):
+    count = 10
     with open(path, "rb") as file:
             pdf_file = file.read()
-    benchmark_dilithium(Dilithium,Dilithium3,count,pdf_file)
+    benchmark_dilithium(Dilithium3,"Dilithium3",count,pdf_file)
 if __name__ == "__main__":
     main()
