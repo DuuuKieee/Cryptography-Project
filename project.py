@@ -18,9 +18,13 @@ client = MongoClient(CONNECTION_STRING)
 dbname = "CryptoProject"
 db = client[dbname]
 file_collection = db["fs.files"]
-account = "test"
+user_collection = db["UserCollection"]
+account =""
 def main():
     # Connect to MongoDB
+    print("/publish: to publish file if you are admin!")
+    print("/verify: verify the file you have!")
+    print("/download: download file by name")
     
     global account 
     print("Account:")
@@ -28,36 +32,16 @@ def main():
     print ("Command:")
     command = input()
 
-    if(command == "/help"):
-        print("/publish: to publish file if you are admin!")
-        print("/verify: verify the file you have!")
-        print("/download: download file by name")
-        return main()
-    
-    if(account == "admin"):
-        if(command == "/publish"):
-            PublisherPermission()
-        elif(command == "/verify"):
-            RecepientPermission()
-        elif(command=="/download"):
-            download_file()
-        elif(command=="/benchmark"):
-            # print("Số lần gọi thuật toán để đo hiệu suất:")
-            # count = input()
-            print("File path:")
-            path = input()
-            bench_mark(path)
-        else: 
-            print("Command not found for admin!")
-    else:
-        if(command =="/publish"):
-            print("Permission denied")
-        elif(command=="/verify"):
-            RecepientPermission()
-        elif(command=="/download"):
-            download_file()
-        else: 
-            print("Command not found for client!") 
+    if(command == "/publish"):
+        PublisherPermission()
+    elif(command == "/verify"):
+        RecepientPermission()
+    elif(command=="/download"):
+        download_file()
+    elif(command=="/benchmark"):
+        bench_mark()
+    elif(command =="/search"):
+        search()
     print("---------------------------")
     return main()
     # Generate keys
@@ -104,31 +88,34 @@ def makePdf(src, watermark):
         return merged
 def PublisherPermission():
     try:
-        global account
-        pk, sk = Dilithium3.keygen()
-        print("File path:") 
-        path =input()
-        print("File name:")
-        file_name = input()
-        path = makePdf(path, makeWatermark())
-        with open(path, "rb") as file:
-            pdf_file = file.read()
-        sig = Dilithium3.sign(sk, pdf_file)
-        sig_hex = binascii.hexlify(sig).decode('utf-8')
-        pkh_ex = binascii.hexlify(pk).decode('utf-8')
-        now = datetime.now()
-        dt_string = now.strftime("%d/%m/%Y")
+        doccument = user_collection.find_one({"username": account})
+  
+        if(doccument["role"] == "0"):
+            pk, sk = Dilithium3.keygen()
+            print("File path:") 
+            path =input()
+            print("File name:")
+            file_name = input()
+            print("Waiting for publish...")
+            path = makePdf(path, makeWatermark())
+            with open(path, "rb") as file:
+                pdf_file = file.read()
+            sig = Dilithium3.sign(sk, pdf_file)
+            sig_hex = binascii.hexlify(sig).decode('utf-8')
+            pkh_ex = binascii.hexlify(pk).decode('utf-8')
+            now = datetime.now()
+            dt_string = now.strftime("%d/%m/%Y")
 
-        fs = gridfs.GridFS(file_collection.database)
-        with open(path, "ab") as f:
-            f.write(sig)
-        file_id = fs.put(pdf_file, filename = file_name, publisher = account,Date = dt_string, publickey = pkh_ex )
-        with open(file_name+"_signed.pdf", "wb") as f:
-            f.write(pdf_file)
-
+            fs = gridfs.GridFS(file_collection.database)
+            with open(path, "ab") as f:
+                f.write(sig)
+            file_id = fs.put(pdf_file, filename = file_name, publisher = account,Date = dt_string, publickey = pkh_ex )
+            with open(file_name+"_signed.pdf", "wb") as f:
+                f.write(pdf_file)
+            print("Published!")
+        else:
+            print("You do not have permission to do that.")
         
-    
-        print("Published!")
     except Exception as e: 
         print(e)
         print("Duong dan khong hop le")
@@ -138,7 +125,6 @@ def PublisherPermission():
 def RecepientPermission():
     print("File path:")
     path = input()
-    
     flag = 0
     try:
         for document in file_collection.find():
@@ -168,14 +154,15 @@ def RecepientPermission():
 
 def download_file():
     list_files()
-    search(input())
+    global account
     print("File name:")
     file_name = input()
     fs = gridfs.GridFS(file_collection.database)
-    file = fs.find_one({"filename": file_name})
+    user = user_collection.find_one({"username": account })
+    file = fs.find_one({"filename": file_name, "permission": user["role"]})
 
     if file:
-        with open(file_name+".pdf", "wb") as f:
+        with open(file_name+"sign.pdf", "wb") as f:
             f.write(file.read())
         print("Downloaded successfully!")
     else:
@@ -189,7 +176,8 @@ def list_files():
         file_date = document["uploadDate"]
         print(f"{i}: {file_name} (Uploaded on: {file_date})")
 
-def search(query):
+def search():
+    query = input()
     pipeline = [
         {
             "$search": {
@@ -197,7 +185,8 @@ def search(query):
                 "text": {
                     "query": query,
                     "path": {
-                        "wildcard": "*"
+                        "filename": "*",
+                        "Date": "*"
                     }
                     
                 }
@@ -224,6 +213,11 @@ def bench_mark(path):
     with open(path, "rb") as file:
             pdf_file = file.read()
     benchmark_dilithium(Dilithium3,"Dilithium3",count,pdf_file)
+
+def Login(username):
+    global account
+    account = username
+    
     
 if __name__ == "__main__":
     main()
