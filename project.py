@@ -25,6 +25,7 @@ def main():
     print("/publish: to publish file if you are admin!")
     print("/verify: verify the file you have!")
     print("/download: download file by name")
+    print("/search: search a file with name or date (example: 22/6/2023)")
     
     global account 
     print("Account:")
@@ -101,7 +102,6 @@ def PublisherPermission():
             with open(path, "rb") as file:
                 pdf_file = file.read()
             sig = Dilithium3.sign(sk, pdf_file)
-            sig_hex = binascii.hexlify(sig).decode('utf-8')
             pkh_ex = binascii.hexlify(pk).decode('utf-8')
             now = datetime.now()
             dt_string = now.strftime("%d/%m/%Y")
@@ -109,6 +109,8 @@ def PublisherPermission():
             fs = gridfs.GridFS(file_collection.database)
             with open(path, "ab") as f:
                 f.write(sig)
+            with open(path, "rb") as file:
+                pdf_file = file.read()
             file_id = fs.put(pdf_file, filename = file_name, publisher = account,Date = dt_string, publickey = pkh_ex )
             with open(file_name+"_signed.pdf", "wb") as f:
                 f.write(pdf_file)
@@ -136,7 +138,6 @@ def RecepientPermission():
                 pdf_file = file.read(file_size - 3293)
                 file.seek(-3293, 2)  
                 signature = file.read()  
-            sig_hex = binascii.hexlify(signature).decode('utf-8')
             verify = Dilithium3.verify(public_key, pdf_file, signature)
             if(verify == True):
                 print(f"Verification result for signature {document['_id']}: {verify}")
@@ -159,7 +160,7 @@ def download_file():
     file_name = input()
     fs = gridfs.GridFS(file_collection.database)
     user = user_collection.find_one({"username": account })
-    file = fs.find_one({"filename": file_name, "permission": user["role"]})
+    file = fs.find_one({"filename": file_name})
 
     if file:
         with open(file_name+"sign.pdf", "wb") as f:
@@ -185,8 +186,7 @@ def search():
                 "text": {
                     "query": query,
                     "path": {
-                        "filename": "*",
-                        "Date": "*"
+                        "wildcard": "*",
                     }
                     
                 }
