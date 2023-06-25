@@ -210,7 +210,7 @@ def search():
     for i, doc in enumerate(list(results), start=1):
         print(f"{i}: {doc}")
 
-def bench_mark(path):
+def bench_mark(path = input()):
     count = 10
     with open(path, "rb") as file:
             pdf_file = file.read()
