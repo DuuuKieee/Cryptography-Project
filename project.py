@@ -30,6 +30,7 @@ def main():
     global account 
     print("Account:")
     account = input()
+    list_files()
     print ("Command:")
     command = input()
 
@@ -106,6 +107,8 @@ def PublisherPermission():
             now = datetime.now()
             dt_string = now.strftime("%d/%m/%Y")
 
+            # Upload signature to MongoDB
+
             fs = gridfs.GridFS(file_collection.database)
             with open(path, "ab") as f:
                 f.write(sig)
@@ -122,7 +125,7 @@ def PublisherPermission():
         print(e)
         print("Duong dan khong hop le")
         PublisherPermission()
-    #     # Upload signature to MongoDB
+    
 
 def RecepientPermission():
     print("File path:")
@@ -146,24 +149,23 @@ def RecepientPermission():
             else:
                 flag+=1
         if(flag != 0):
-            print("false")
+            print("Verification result for signature: FALSE")
              
     except Exception as e: 
         print(e)
-        print("File khong hop le2")
+        print("File khong hop le")
         RecepientPermission(file_collection)
 
 def download_file():
-    list_files()
     global account
-    print("File name:")
+    print("Enter file name to download: ")
     file_name = input()
     fs = gridfs.GridFS(file_collection.database)
     user = user_collection.find_one({"username": account })
     file = fs.find_one({"filename": file_name})
 
     if file:
-        with open(file_name+"sign.pdf", "wb") as f:
+        with open(file_name+"signed.pdf", "wb") as f:
             f.write(file.read())
         print("Downloaded successfully!")
     else:
@@ -178,6 +180,7 @@ def list_files():
         print(f"{i}: {file_name} (Uploaded on: {file_date})")
 
 def search():
+    print("Enter a keyword to search for: ")
     query = input()
     pipeline = [
         {
@@ -202,7 +205,6 @@ def search():
             }
         }              
 ]
-    
     
     results = file_collection.aggregate(pipeline)
     for i, doc in enumerate(list(results), start=1):
